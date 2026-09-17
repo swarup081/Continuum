@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Continuum</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <span class="logo-icon">🔄</span>
+        <span class="logo-text">Continuum</span>
+      </div>
+      <button id="captureToggle" class="toggle-btn" title="Toggle capture">
+        <span id="captureIcon">●</span>
+      </button>
+    </div>
+
+    <!-- Auth Section (shown when not logged in) -->
+    <div id="authSection" class="section" style="display: none;">
+      <div class="auth-form">
+        <input type="email" id="loginEmail" placeholder="Email" class="input">
+        <input type="password" id="loginPassword" placeholder="Password" class="input">
+        <button id="loginBtn" class="btn btn-primary">Login</button>
+        <p class="auth-link">No account? <a href="#" id="showRegister">Register</a></p>
+      </div>
+    </div>
+
+    <!-- Active Project Banner -->
+    <div id="activeProjectBanner" class="active-project" style="display: none;">
+      <div class="active-label">Active Project</div>
+      <div id="activeProjectName" class="active-name">—</div>
+      <div id="activeProjectCount" class="active-count">0 items captured</div>
+    </div>
+
+    <!-- Create Project -->
+    <div class="section">
+      <div class="create-project">
+        <input type="text" id="newProjectName" placeholder="New project name..." class="input">
+        <button id="createProjectBtn" class="btn btn-primary">Create</button>
+      </div>
+    </div>
+
+    <!-- Project List -->
+    <div class="section">
+      <div class="section-title">Projects</div>
+      <div id="projectList" class="project-list">
+        <div class="loading">Loading projects...</div>
+      </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span id="statusText" class="status-text">Ready</span>
+    </div>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

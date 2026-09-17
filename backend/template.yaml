@@ -1,0 +1,464 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Continuum — Cross-LLM Context Memory Backend
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 256
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        PROJECTS_TABLE: !Ref ProjectsTable
+        ENTRIES_TABLE: !Ref EntriesTable
+        USERS_TABLE: !Ref UsersTable
+        RAW_BUCKET: !Ref RawContentBucket
+        BEDROCK_SUMMARY_MODEL: anthropic.claude-3-haiku-20240307-v1:0
+        BEDROCK_EMBED_MODEL: amazon.titan-embed-text-v2:0
+        USER_POOL_ID: !Ref CognitoUserPool
+        USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+
+Parameters:
+  Stage:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, prod]
+
+Resources:
+  # ─── Cognito ──────────────────────────────────────────────────────
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: ContinuumUserPool
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: false
+        - Name: name
+          Required: false
+          Mutable: true
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: ContinuumClient
+      UserPoolId: !Ref CognitoUserPool
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      GenerateSecret: false
+
+  # ─── DynamoDB Tables ──────────────────────────────────────────────
+  ProjectsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ContinuumProjects
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: project_id
+          AttributeType: S
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: created_at
+          AttributeType: S
+      KeySchema:
+        - AttributeName: project_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserProjectsIndex
+          KeySchema:
+            - AttributeName: user_id
+              KeyType: HASH
+            - AttributeName: created_at
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  EntriesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ContinuumContextEntries
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: entry_id
+          AttributeType: S
+        - AttributeName: project_id
+          AttributeType: S
+        - AttributeName: captured_at
+          AttributeType: S
+      KeySchema:
+        - AttributeName: entry_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: ProjectEntriesIndex
+          KeySchema:
+            - AttributeName: project_id
+              KeyType: HASH
+            - AttributeName: captured_at
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ContinuumUsers
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+
+  # ─── S3 ───────────────────────────────────────────────────────────
+  RawContentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub continuum-raw-${AWS::AccountId}-${AWS::Region}
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldContent
+            Status: Enabled
+            ExpirationInDays: 90
+
+  # ─── API Gateway ──────────────────────────────────────────────────
+  ContinuumApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+      Cors:
+        AllowOrigin: "'*'"
+        AllowMethods: "'GET,POST,PUT,PATCH,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt CognitoUserPool.Arn
+        AddDefaultAuthorizerToCorsPreflight: false
+
+  # ─── Lambda Functions ─────────────────────────────────────────────
+
+  # Auth
+  RegisterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/auth/
+      Handler: register.handler
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /auth/register
+            Method: POST
+            Auth:
+              Authorizer: NONE
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:SignUp
+                - cognito-idp:AdminConfirmSignUp
+                - cognito-idp:InitiateAuth
+              Resource: !GetAtt CognitoUserPool.Arn
+
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/auth/
+      Handler: login.handler
+      Events:
+        Login:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /auth/login
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        Refresh:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /auth/refresh
+            Method: POST
+            Auth:
+              Authorizer: NONE
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:InitiateAuth
+              Resource: !GetAtt CognitoUserPool.Arn
+
+  # Projects
+  CreateProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/projects/
+      Handler: create.handler
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /projects
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProjectsTable
+
+  ListProjectsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/projects/
+      Handler: list.handler
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /projects
+            Method: GET
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProjectsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EntriesTable
+
+  UpdateProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/projects/
+      Handler: update.handler
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /projects/{project_id}
+            Method: PATCH
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProjectsTable
+
+  RestoreProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/projects/
+      Handler: restore.handler
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /projects/{project_id}/restore
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProjectsTable
+
+  DeleteProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/projects/
+      Handler: delete.handler
+      Timeout: 60
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /projects/{project_id}
+            Method: DELETE
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProjectsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EntriesTable
+        - S3CrudPolicy:
+            BucketName: !Ref RawContentBucket
+
+  # Ingest
+  IngestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/ingest/
+      Handler: handler.handler
+      Timeout: 60
+      MemorySize: 512
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /ingest
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EntriesTable
+        - S3CrudPolicy:
+            BucketName: !Ref RawContentBucket
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - comprehend:DetectPiiEntities
+              Resource: '*'
+
+  IngestTabsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/ingest/
+      Handler: tabs.handler
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /ingest/tabs
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProjectsTable
+
+  # Context Retrieval
+  PrimerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/context/
+      Handler: primer.handler
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /context/primer
+            Method: GET
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProjectsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EntriesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+
+  SearchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/context/
+      Handler: search.handler
+      Timeout: 30
+      MemorySize: 512
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /context/search
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EntriesTable
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: '*'
+
+  EntriesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/context/
+      Handler: entries.handler
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /context/entries
+            Method: GET
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EntriesTable
+
+  # Profile
+  ProfileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/profile/
+      Handler: handler.handler
+      Events:
+        Get:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /profile
+            Method: GET
+        Put:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /profile
+            Method: PUT
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+
+  # Privacy
+  PrivacyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/privacy/
+      Handler: handler.handler
+      Events:
+        Get:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /privacy
+            Method: GET
+        Put:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /privacy
+            Method: PUT
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${ContinuumApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref CognitoUserPool
+  UserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value: !Ref CognitoUserPoolClient
+  RawBucketName:
+    Description: S3 bucket for raw content
+    Value: !Ref RawContentBucket
