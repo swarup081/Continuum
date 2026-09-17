@@ -1,0 +1,324 @@
+/* Continuum Extension Popup — Dark Theme */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #0a0a0f;
+  color: #e0e0e0;
+  width: 360px;
+  min-height: 400px;
+}
+
+.popup-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #12121a, #1a1a2e);
+  border-bottom: 1px solid #2a2a3e;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-icon {
+  font-size: 20px;
+}
+
+.logo-text {
+  font-size: 16px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6c63ff, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.toggle-btn {
+  background: none;
+  border: 2px solid #2a2a3e;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  border-color: #6c63ff;
+}
+
+.toggle-btn.active {
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.toggle-btn.paused {
+  border-color: #888;
+  color: #888;
+}
+
+/* Active Project Banner */
+.active-project {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(108, 99, 255, 0.05));
+  border-bottom: 1px solid #2a2a3e;
+}
+
+.active-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #6c63ff;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.active-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.active-count {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+/* Sections */
+.section {
+  padding: 12px 16px;
+}
+
+.section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #888;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* Create Project */
+.create-project {
+  display: flex;
+  gap: 8px;
+}
+
+.input {
+  flex: 1;
+  background: #12121a;
+  border: 1px solid #2a2a3e;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #e0e0e0;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  border-color: #6c63ff;
+}
+
+.input::placeholder {
+  color: #555;
+}
+
+/* Buttons */
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #7c74ff, #6c63ff);
+  transform: translateY(-1px);
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 11px;
+  border-radius: 6px;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #2a2a3e;
+  color: #888;
+}
+
+.btn-outline:hover {
+  border-color: #6c63ff;
+  color: #6c63ff;
+}
+
+.btn-danger {
+  background: transparent;
+  border: 1px solid #f4433622;
+  color: #f44336;
+}
+
+.btn-danger:hover {
+  background: #f4433615;
+}
+
+/* Project List */
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.project-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #12121a;
+  border: 1px solid #2a2a3e;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.project-item:hover {
+  border-color: #6c63ff;
+  background: #1a1a2e;
+}
+
+.project-item.active {
+  border-color: #6c63ff;
+  background: rgba(108, 99, 255, 0.1);
+}
+
+.project-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.project-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0e0e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-meta {
+  font-size: 11px;
+  color: #666;
+}
+
+.project-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.status-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.status-badge.active {
+  background: #4caf5020;
+  color: #4caf50;
+}
+
+.status-badge.archived {
+  background: #88888820;
+  color: #888;
+}
+
+/* Auth */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-link {
+  font-size: 12px;
+  color: #888;
+  text-align: center;
+}
+
+.auth-link a {
+  color: #6c63ff;
+  text-decoration: none;
+}
+
+/* Status Bar */
+.status-bar {
+  margin-top: auto;
+  padding: 8px 16px;
+  border-top: 1px solid #2a2a3e;
+  background: #0a0a0f;
+}
+
+.status-text {
+  font-size: 11px;
+  color: #555;
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #555;
+  font-size: 13px;
+}
+
+/* Scrollbar */
+.project-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.project-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.project-list::-webkit-scrollbar-thumb {
+  background: #2a2a3e;
+  border-radius: 4px;
+}
