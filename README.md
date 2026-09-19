@@ -39,6 +39,30 @@ continuum/
 └── AI_TOOLS_USED.md → AI tools usage log (hackathon requirement)
 ```
 
+
+## Installation & Usage Guide
+
+### 1. Dashboard & Account Setup
+1. Visit the hosted web dashboard (e.g., your deployed AWS S3 bucket URL or Amplify URL).
+2. Click **Sign Up** to create an account (managed via AWS Cognito).
+3. Once logged in, go to your **Settings** to add user facts (e.g., "I code in Python") and privacy rules (e.g., blocking sensitive keywords).
+4. Create a **New Project** (e.g., "Hackathon Ideas").
+
+### 2. Extension Installation
+1. Open Google Chrome and navigate to `chrome://extensions/`.
+2. Turn on **Developer mode** in the top right corner.
+3. Click **Load unpacked** in the top left corner.
+4. Select the `extension/` folder from this repository.
+5. Pin the Continuum extension to your toolbar.
+
+### 3. Usage
+1. Click the Continuum extension icon in your browser toolbar.
+2. It will automatically detect your logged-in session from the dashboard.
+3. Select your active project (e.g., "Hackathon Ideas") from the dropdown.
+4. Ensure the **Capture Context** toggle is turned on.
+5. Go to ChatGPT, Claude, or Gemini and chat naturally. The extension will auto-capture, summarize, and securely store the context.
+6. When you open a *new* chat window in the future, the extension will instantly inject your active project's primer and context history directly into the text box!
+
 ## Workstream Setup
 
 Each workstream has its own README with detailed setup instructions:

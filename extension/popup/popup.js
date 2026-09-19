@@ -43,10 +43,18 @@ async function loadProjects() {
   try {
     const data = await ContinuumAPI.getProjects();
     projects = data.projects || [];
+    if (activeProject) {
+      const updated = projects.find(p => p.project_id === activeProject.project_id);
+      if (updated) {
+        activeProject = updated;
+        chrome.storage.local.set({ activeProject });
+        updateUI();
+      }
+    }
     renderProjectList();
   } catch (err) {
     console.error('Failed to load projects:', err);
-    els.projectList.innerHTML = '<div class="loading">Failed to load projects</div>';
+    els.projectList.innerHTML = '<div class="loading">Failed to load projects</div>'; els.authSection.style.display = 'block';
   }
 }
 
@@ -298,3 +306,5 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+
+

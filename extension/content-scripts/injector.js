@@ -14,7 +14,7 @@
   async function init() {
     state = await chrome.runtime.sendMessage({ type: 'GET_STATE' });
 
-    if (!state.activeProject) {
+    if (!state.activeProject || !state.captureEnabled) {
       console.log('[Continuum] Injector: No active project');
       return;
     }

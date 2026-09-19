@@ -4,7 +4,7 @@
 const CONFIG = {
   // Toggle for development — switch to false + set real URL once backend is deployed
   USE_MOCK: false,
-  API_BASE: 'https://YOUR_API_ID.execute-api.ap-south-1.amazonaws.com/prod',
+  API_BASE: 'https://7h8hmfx6mg.execute-api.ap-southeast-2.amazonaws.com/prod',
 };
 
 // ─── Auth helpers ───────────────────────────────────────────────────
@@ -186,3 +186,4 @@ export const ContinuumAPI = {
     return res.json();
   },
 };
+
