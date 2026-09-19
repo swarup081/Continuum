@@ -1,0 +1,17 @@
+{
+  "name": "continuum-mcp-server",
+  "version": "0.1.0",
+  "description": "Continuum MCP server — context tools for Claude Desktop, Cursor, and other MCP clients",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "continuum-mcp": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/index.js --mock"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}

@@ -33,3 +33,6 @@ npm-debug.log*
 coverage/
 .coverage
 htmlcov/
+dashboard/dist/
+mcp-server/node_modules/
+dashboard/.vite/
