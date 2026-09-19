@@ -109,7 +109,12 @@
     const newTexts = newElements.map(processElement).filter(t => t && t.length >= MIN_CONTENT_LENGTH);
     const historyTexts = historyElements.map(processElement).filter(t => t);
 
+    console.log(`[Continuum Debug] Flush triggered. Total messages found: ${messages.length}`);
+    console.log(`[Continuum Debug] New elements since last capture: ${newElements.length}`);
+    console.log(`[Continuum Debug] Texts passing length filter (>= 50 chars): ${newTexts.length}`);
+
     if (newTexts.length === 0) {
+      console.log('[Continuum Debug] Aborting flush: No new messages are long enough (>= 50 chars). Try typing a much longer message!');
       lastCapturedIndex = messages.length;
       return;
     }

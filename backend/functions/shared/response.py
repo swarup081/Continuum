@@ -1,5 +1,8 @@
 """Shared response helpers for Lambda functions."""
 import json
+import os
+
+LOCAL_MODE = os.environ.get('LOCAL_MODE', 'false').lower() == 'true'
 
 CORS_HEADERS = {
     'Content-Type': 'application/json',
@@ -33,7 +36,9 @@ def error(code, message, status_code=400):
 
 
 def get_user_id(event):
-    """Extract user_id from Cognito JWT claims in API Gateway event."""
+    """Extract user_id from Cognito JWT claims or return dev user in LOCAL_MODE."""
+    if LOCAL_MODE:
+        return 'dev-user-001'
     try:
         claims = event['requestContext']['authorizer']['claims']
         return claims['sub']

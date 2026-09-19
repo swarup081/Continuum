@@ -13,8 +13,6 @@ import os
 import uuid
 from datetime import datetime
 
-import boto3
-
 # Add shared to path
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -25,8 +23,23 @@ from shared.bedrock_client import summarize, embed
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-s3 = boto3.client('s3')
-dynamodb = boto3.resource('dynamodb')
+LOCAL_MODE = os.environ.get('LOCAL_MODE', 'false').lower() == 'true'
+
+if LOCAL_MODE:
+    import boto3
+    dynamodb = boto3.resource(
+        'dynamodb',
+        endpoint_url='http://localhost:8000',
+        region_name='us-east-1',
+        aws_access_key_id='local',
+        aws_secret_access_key='local',
+    )
+    LOCAL_DATA_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'local-data', 'raw')
+else:
+    import boto3
+    s3 = boto3.client('s3')
+    dynamodb = boto3.resource('dynamodb')
+
 
 ENTRIES_TABLE = os.environ.get('ENTRIES_TABLE', 'ContinuumContextEntries')
 RAW_BUCKET = os.environ.get('RAW_BUCKET', 'continuum-raw')
@@ -72,15 +85,22 @@ def handler(event, context):
         logger.info(json.dumps({'action': 'step_3_embed', 'entry_id': entry_id}))
         embedding = embed(summary_text)
 
-        # 4. Store raw content in S3
-        logger.info(json.dumps({'action': 'step_4_s3_store', 'entry_id': entry_id}))
+        # 4. Store raw content (S3 in cloud, local filesystem in LOCAL_MODE)
+        logger.info(json.dumps({'action': 'step_4_store_raw', 'entry_id': entry_id}))
         s3_key = f'{user_id}/{project_id}/{entry_id}.txt'
-        s3.put_object(
-            Bucket=RAW_BUCKET,
-            Key=s3_key,
-            Body=clean_content.encode('utf-8'),
-            ContentType='text/plain',
-        )
+
+        if LOCAL_MODE:
+            local_path = os.path.join(LOCAL_DATA_DIR, s3_key)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, 'w', encoding='utf-8') as f:
+                f.write(clean_content)
+        else:
+            s3.put_object(
+                Bucket=RAW_BUCKET,
+                Key=s3_key,
+                Body=clean_content.encode('utf-8'),
+                ContentType='text/plain',
+            )
 
         # 5. Store metadata + embedding in DynamoDB
         logger.info(json.dumps({'action': 'step_5_dynamodb_store', 'entry_id': entry_id}))

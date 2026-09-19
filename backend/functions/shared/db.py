@@ -3,7 +3,19 @@ import os
 import boto3
 from boto3.dynamodb.conditions import Key
 
-dynamodb = boto3.resource('dynamodb')
+LOCAL_MODE = os.environ.get('LOCAL_MODE', 'false').lower() == 'true'
+
+if LOCAL_MODE:
+    dynamodb = boto3.resource(
+        'dynamodb',
+        endpoint_url='http://localhost:8000',
+        region_name='us-east-1',
+        aws_access_key_id='local',
+        aws_secret_access_key='local',
+    )
+else:
+    dynamodb = boto3.resource('dynamodb')
+
 
 PROJECTS_TABLE = os.environ.get('PROJECTS_TABLE', 'ContinuumProjects')
 ENTRIES_TABLE = os.environ.get('ENTRIES_TABLE', 'ContinuumContextEntries')
