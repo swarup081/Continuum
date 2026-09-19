@@ -14,6 +14,7 @@ import uuid
 from datetime import datetime
 
 import boto3
+from decimal import Decimal
 
 # Add shared to path
 import sys
@@ -95,7 +96,7 @@ def handler(event, context):
             'title': body.get('title', ''),
             'summary_text': summary_text,
             's3_raw_ref': s3_key,
-            'embedding': [float(x) for x in embedding],  # Titan 1024-dim vector for cosine similarity search
+            'embedding': [Decimal(str(x)) for x in embedding],  # Titan 1024-dim vector for cosine similarity search
             'captured_at': body.get('captured_at', datetime.utcnow().isoformat()),
         }
         table.put_item(Item=entry)
@@ -119,3 +120,4 @@ def handler(event, context):
             'error': str(e),
         }))
         return error('INTERNAL_ERROR', f'Ingestion failed: {str(e)}', 500)
+

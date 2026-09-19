@@ -86,6 +86,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function handleMessage(message, sender) {
+  await loadState();
   switch (message.type) {
     // ── From content scripts ──
     case 'CAPTURE_CONTENT': {
@@ -108,7 +109,7 @@ async function handleMessage(message, sender) {
     }
 
     case 'GET_PRIMER': {
-      if (!activeProject) return { primer: null };
+      if (!activeProject || !captureEnabled) return { primer: null };
       return await getPrimer();
     }
 
@@ -214,3 +215,4 @@ async function restoreTabs(projectId) {
     return { success: false, error: err.message };
   }
 }
+

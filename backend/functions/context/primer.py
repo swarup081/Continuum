@@ -50,32 +50,20 @@ def handler(event, context):
 
 
 def compose_primer(project, entries, facts):
-    """Build the primer text that gets injected into LLM chat boxes."""
-    lines = ['## Your Context (via Continuum)\n']
-
-    # Profile section
+    lines = []
+    
     if facts:
-        profile_parts = []
-        for fact in facts:
-            profile_parts.append(f"{fact['value']}")
-        lines.append(f"**About you:** {', '.join(profile_parts)}\n")
-
-    # Project section
-    lines.append(f"**Active Project:** {project['name']}")
-    if project.get('description'):
-        lines.append(f"{project['description']}\n")
-
-    # Recent context
+        lines.append(f"User Facts: {', '.join([f['value'] for f in facts])}")
+        
     if entries:
-        lines.append('\n**Recent context:**')
+        lines.append('Recent context:')
         for entry in entries[:5]:
             source = entry.get('source_name', 'Unknown')
             summary = entry.get('summary_text', '')
             lines.append(f"- [{source}] {summary}")
 
-    lines.append('\n*This context was auto-loaded by Continuum from your previous research.*')
-
-    return '\n'.join(lines)
+    return '
+'.join(lines)
 
 
 def format_profile(facts):

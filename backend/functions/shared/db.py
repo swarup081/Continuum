@@ -148,3 +148,26 @@ def upsert_user(user_id, updates):
     # Use put_item for simplicity (full replace)
     table.put_item(Item=updates)
     return updates
+
+def get_entry(entry_id):
+    """Get a single context entry by ID."""
+    table = get_entries_table()
+    response = table.get_item(Key={'entry_id': entry_id})
+    return response.get('Item')
+
+
+def update_entry(entry_id, updates):
+    """Update context entry fields."""
+    table = get_entries_table()
+    update_expr = 'SET ' + ', '.join(f'#{k} = :{k}' for k in updates)
+    expr_names = {f'#{k}': k for k in updates}
+    expr_values = {f':{k}': v for k, v in updates.items()}
+
+    response = table.update_item(
+        Key={'entry_id': entry_id},
+        UpdateExpression=update_expr,
+        ExpressionAttributeNames=expr_names,
+        ExpressionAttributeValues=expr_values,
+        ReturnValues='ALL_NEW',
+    )
+    return response.get('Attributes')

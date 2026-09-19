@@ -1,6 +1,6 @@
-AWSTemplateFormatVersion: '2010-09-09'
+﻿AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Continuum — Cross-LLM Context Memory Backend
+Description: Continuum â€” Cross-LLM Context Memory Backend
 
 Globals:
   Function:
@@ -27,7 +27,7 @@ Parameters:
     AllowedValues: [dev, prod]
 
 Resources:
-  # ─── Cognito ──────────────────────────────────────────────────────
+  # â”€â”€â”€ Cognito â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -60,7 +60,7 @@ Resources:
         - ALLOW_USER_SRP_AUTH
       GenerateSecret: false
 
-  # ─── DynamoDB Tables ──────────────────────────────────────────────
+  # â”€â”€â”€ DynamoDB Tables â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   ProjectsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -123,7 +123,7 @@ Resources:
         - AttributeName: user_id
           KeyType: HASH
 
-  # ─── S3 ───────────────────────────────────────────────────────────
+  # â”€â”€â”€ S3 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   RawContentBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -134,7 +134,7 @@ Resources:
             Status: Enabled
             ExpirationInDays: 90
 
-  # ─── API Gateway ──────────────────────────────────────────────────
+  # â”€â”€â”€ API Gateway â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   ContinuumApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -150,14 +150,14 @@ Resources:
             UserPoolArn: !GetAtt CognitoUserPool.Arn
         AddDefaultAuthorizerToCorsPreflight: false
 
-  # ─── Lambda Functions ─────────────────────────────────────────────
+  # â”€â”€â”€ Lambda Functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   # Auth
   RegisterFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/auth/
-      Handler: register.handler
+      CodeUri: functions/
+      Handler: auth.register.handler
       Events:
         Api:
           Type: Api
@@ -180,8 +180,8 @@ Resources:
   LoginFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/auth/
-      Handler: login.handler
+      CodeUri: functions/
+      Handler: auth.login.handler
       Events:
         Login:
           Type: Api
@@ -211,8 +211,8 @@ Resources:
   CreateProjectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/projects/
-      Handler: create.handler
+      CodeUri: functions/
+      Handler: projects.create.handler
       Events:
         Api:
           Type: Api
@@ -227,8 +227,8 @@ Resources:
   ListProjectsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/projects/
-      Handler: list.handler
+      CodeUri: functions/
+      Handler: projects.list.handler
       Events:
         Api:
           Type: Api
@@ -245,8 +245,8 @@ Resources:
   UpdateProjectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/projects/
-      Handler: update.handler
+      CodeUri: functions/
+      Handler: projects.update.handler
       Events:
         Api:
           Type: Api
@@ -261,8 +261,8 @@ Resources:
   RestoreProjectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/projects/
-      Handler: restore.handler
+      CodeUri: functions/
+      Handler: projects.restore.handler
       Events:
         Api:
           Type: Api
@@ -277,8 +277,8 @@ Resources:
   DeleteProjectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/projects/
-      Handler: delete.handler
+      CodeUri: functions/
+      Handler: projects.delete.handler
       Timeout: 60
       Events:
         Api:
@@ -299,8 +299,8 @@ Resources:
   IngestFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/ingest/
-      Handler: handler.handler
+      CodeUri: functions/
+      Handler: ingest.handler.handler
       Timeout: 60
       MemorySize: 512
       Events:
@@ -329,8 +329,8 @@ Resources:
   IngestTabsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/ingest/
-      Handler: tabs.handler
+      CodeUri: functions/
+      Handler: ingest.tabs.handler
       Events:
         Api:
           Type: Api
@@ -346,8 +346,8 @@ Resources:
   PrimerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/context/
-      Handler: primer.handler
+      CodeUri: functions/
+      Handler: context.primer.handler
       Events:
         Api:
           Type: Api
@@ -366,8 +366,8 @@ Resources:
   SearchFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/context/
-      Handler: search.handler
+      CodeUri: functions/
+      Handler: context.search.handler
       Timeout: 30
       MemorySize: 512
       Events:
@@ -390,8 +390,8 @@ Resources:
   EntriesFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/context/
-      Handler: entries.handler
+      CodeUri: functions/
+      Handler: context.entries.handler
       Events:
         Api:
           Type: Api
@@ -407,8 +407,8 @@ Resources:
   ProfileFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/profile/
-      Handler: handler.handler
+      CodeUri: functions/
+      Handler: profile.handler.handler
       Events:
         Get:
           Type: Api
@@ -430,8 +430,8 @@ Resources:
   PrivacyFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/privacy/
-      Handler: handler.handler
+      CodeUri: functions/
+      Handler: privacy.handler.handler
       Events:
         Get:
           Type: Api
@@ -449,10 +449,47 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable
 
+
+  GetRawEntryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/
+      Handler: context.raw.handler
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /context/entries/{entry_id}/raw
+            Method: GET
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EntriesTable
+        - S3CrudPolicy:
+            BucketName: !Ref RawContentBucket
+
+  UpdateEntryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/
+      Handler: context.update.handler
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContinuumApi
+            Path: /context/entries/{entry_id}
+            Method: PUT
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EntriesTable
+        - S3CrudPolicy:
+            BucketName: !Ref RawContentBucket
+
 Outputs:
   ApiUrl:
     Description: API Gateway endpoint URL
-    Value: !Sub https://${ContinuumApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}
+    Value: !Sub https://$"{ContinuumApi}".execute-api.$"{AWS::Region}".amazonaws.com/$"{Stage}"
   UserPoolId:
     Description: Cognito User Pool ID
     Value: !Ref CognitoUserPool
