@@ -18,7 +18,11 @@
     "type": "module"
   },
   "action": {
-    "default_popup": "popup/popup.html"
+    "default_popup": "popup/popup.html",
+    "default_icon": "icons/icon-128.svg"
+  },
+  "icons": {
+    "128": "icons/icon-128.svg"
   },
   "content_scripts": [
     {
@@ -47,7 +51,8 @@
       ],
       "exclude_matches": [
         "https://chatgpt.com/*",
-        "https://gemini.google.com/*"
+        "https://gemini.google.com/*",
+        "https://claude.ai/*"
       ],
       "js": [
         "utils/privacy-filter.js",

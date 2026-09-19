@@ -29,15 +29,19 @@ def handler(event, context):
     if project['user_id'] != user_id:
         return error('FORBIDDEN', 'Not your project', 403)
 
-    # Delete S3 objects
-    entries, _ = get_entries_for_project(project_id, limit=100)
-    for entry in entries:
-        s3_ref = entry.get('s3_raw_ref')
-        if s3_ref:
-            try:
-                s3.delete_object(Bucket=RAW_BUCKET, Key=s3_ref)
-            except Exception:
-                pass  # Best effort
+    # Delete S3 objects (paginate to get all)
+    last_key = None
+    while True:
+        entries, last_key = get_entries_for_project(project_id, limit=100, last_key=last_key)
+        for entry in entries:
+            s3_ref = entry.get('s3_raw_ref')
+            if s3_ref:
+                try:
+                    s3.delete_object(Bucket=RAW_BUCKET, Key=s3_ref)
+                except Exception:
+                    pass  # Best effort
+        if not last_key:
+            break
 
     # Delete DynamoDB entries
     delete_entries_for_project(project_id)
