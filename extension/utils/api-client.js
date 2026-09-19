@@ -3,7 +3,7 @@
 
 const CONFIG = {
   // Toggle for development — switch to false + set real URL once backend is deployed
-  USE_MOCK: true,
+  USE_MOCK: false,
   API_BASE: 'https://YOUR_API_ID.execute-api.ap-south-1.amazonaws.com/prod',
 };
 
