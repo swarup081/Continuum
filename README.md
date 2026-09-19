@@ -25,8 +25,6 @@ Browser Extension ──→ AWS Backend (API Gateway + Lambda)
                        ├── S3 (raw blobs)
                        └── Cognito (auth)
                               ↑
-MCP Server ────────────────────┘ (tools for MCP-capable LLMs)
-                              ↑
 Web Dashboard ─────────────────┘ (project mgmt, profile, privacy)
 ```
 
@@ -36,7 +34,6 @@ Web Dashboard ─────────────────┘ (project mg
 continuum/
 ├── extension/       → Chrome Extension (Manifest V3)
 ├── backend/         → AWS Serverless Backend (SAM)
-├── mcp-server/      → MCP Tool Server (TypeScript)
 ├── dashboard/       → React Web Dashboard (Vite)
 ├── API_CONTRACTS.md → Shared API contracts (source of truth)
 └── AI_TOOLS_USED.md → AI tools usage log (hackathon requirement)
@@ -50,7 +47,6 @@ Each workstream has its own README with detailed setup instructions:
 |---|---|---|
 | 🔵 Browser Extension | [extension/README.md](./extension/README.md) | TBD |
 | 🟢 AWS Backend | [backend/README.md](./backend/README.md) | TBD |
-| 🟡 MCP Server | [mcp-server/README.md](./mcp-server/README.md) | TBD |
 | 🔴 Dashboard | [dashboard/README.md](./dashboard/README.md) | TBD |
 
 ## Quick Start
@@ -72,7 +68,7 @@ cd Continuum
 - **Amazon S3** — Raw context blob storage
 - **AWS Lambda** — All business logic (serverless)
 - **Amazon API Gateway** — REST API endpoints
-- **Amazon Cognito** — User authentication (dashboard + MCP OAuth)
+- **Amazon Cognito** — User authentication (dashboard)
 - **Amazon CloudWatch** — Monitoring and logging
 
 ## Team

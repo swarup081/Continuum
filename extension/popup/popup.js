@@ -226,9 +226,9 @@ function renderProjectList() {
         </div>
         <div class="project-actions">
           ${isArchived
-            ? `<button class="btn btn-sm btn-outline" data-action="restore" data-id="${p.project_id}" title="Restore & reopen tabs">↩</button>`
-            : `<button class="btn btn-sm btn-outline" data-action="archive" data-id="${p.project_id}" title="Archive">📦</button>`
-          }
+        ? `<button class="btn btn-sm btn-outline" data-action="restore" data-id="${p.project_id}" title="Restore & reopen tabs">↩</button>`
+        : `<button class="btn btn-sm btn-outline" data-action="archive" data-id="${p.project_id}" title="Archive">📦</button>`
+      }
           <button class="btn btn-sm btn-danger" data-action="delete" data-id="${p.project_id}" title="Delete permanently">✕</button>
         </div>
       </div>

@@ -18,16 +18,78 @@
       return;
     }
 
-    // Wait a bit for dynamic content to load
-    setTimeout(capturePageContent, CAPTURE_DELAY_MS);
+    // Inject the manual "Save" button
+    injectFloatingButton();
   }
 
-  function capturePageContent() {
+  function injectFloatingButton() {
+    const btn = document.createElement('button');
+    btn.id = 'continuum-manual-save-btn';
+    btn.innerHTML = `📌 Save to ${state.activeProject.name}`;
+    btn.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #6c63ff;
+      color: white;
+      border: none;
+      border-radius: 24px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+      z-index: 999999;
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    `;
+
+    btn.addEventListener('mouseenter', () => {
+      btn.style.transform = 'translateY(-2px)';
+      btn.style.boxShadow = '0 6px 16px rgba(108, 99, 255, 0.5)';
+    });
+    btn.addEventListener('mouseleave', () => {
+      btn.style.transform = 'translateY(0)';
+      btn.style.boxShadow = '0 4px 12px rgba(108, 99, 255, 0.4)';
+    });
+
+    btn.addEventListener('click', async () => {
+      btn.innerHTML = `⏳ Saving...`;
+      btn.style.background = '#3f3d9e';
+      btn.disabled = true;
+
+      const success = await capturePageContent();
+
+      if (success) {
+        btn.innerHTML = `✅ Saved to ${state.activeProject.name}`;
+        btn.style.background = '#4caf50';
+        setTimeout(() => {
+          btn.style.opacity = '0';
+          setTimeout(() => btn.remove(), 500);
+        }, 3000);
+      } else {
+        btn.innerHTML = `❌ Failed to save (too short)`;
+        btn.style.background = '#f44336';
+        setTimeout(() => {
+          btn.innerHTML = `📌 Save to ${state.activeProject.name}`;
+          btn.style.background = '#6c63ff';
+          btn.disabled = false;
+        }, 3000);
+      }
+    });
+
+    document.body.appendChild(btn);
+  }
+
+  async function capturePageContent() {
     const content = extractMainContent();
 
     if (!content || content.length < MIN_CONTENT_LENGTH) {
       console.log('[Continuum] Page too short to capture:', window.location.href);
-      return;
+      return false;
     }
 
     // Apply privacy filter
@@ -49,6 +111,7 @@
     });
 
     console.log(`[Continuum] Captured webpage: ${hostname} (${filtered.length} chars)`);
+    return true;
   }
 
   /**
