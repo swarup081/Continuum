@@ -1,18 +1,18 @@
 // Continuum — Gemini Content Script
-// Captures conversation content from gemini.google.com using MutationObserver
+// Captures conversation content from gemini.google.com using a Debounced MutationObserver
 
 (function () {
   'use strict';
 
   const SOURCE_NAME = 'Gemini';
   const SOURCE_TYPE = 'llm_chat';
-  const BATCH_INTERVAL_MS = 15000;
+  const DEBOUNCE_MS = 3000;
   const MIN_CONTENT_LENGTH = 50;
+  const HISTORY_WINDOW = 3;
 
-  let messageBuffer = [];
   let lastCapturedIndex = 0;
   let observer = null;
-  let batchTimer = null;
+  let flushTimer = null;
   let state = null;
 
   async function init() {
@@ -25,33 +25,53 @@
 
     console.log('[Continuum] Gemini capture active for project:', state.activeProject.name);
     startObserving();
-    startBatchTimer();
+    
+    window.addEventListener('beforeunload', () => {
+      if (flushTimer) {
+        clearTimeout(flushTimer);
+        flushBuffer();
+      }
+    });
   }
 
   function startObserving() {
     const targetNode = document.querySelector('main') || document.body;
 
     observer = new MutationObserver((mutations) => {
+      let shouldDebounce = false;
       for (const mutation of mutations) {
-        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-          extractNewMessages();
+        // Ignore mutations in Gemini's contenteditable inputs
+        if (mutation.target.isContentEditable || mutation.target.classList?.contains('ql-editor')) {
+          continue;
         }
+        shouldDebounce = true;
+      }
+
+      if (shouldDebounce) {
+        triggerDebouncedFlush();
       }
     });
 
-    observer.observe(targetNode, { childList: true, subtree: true });
-    extractNewMessages();
+    observer.observe(targetNode, { 
+      childList: true, 
+      subtree: true,
+      characterData: true
+    });
   }
 
-  function extractNewMessages() {
-    // Gemini message selectors (may change — update as needed)
+  function triggerDebouncedFlush() {
+    if (flushTimer) clearTimeout(flushTimer);
+    flushTimer = setTimeout(flushBuffer, DEBOUNCE_MS);
+  }
+
+  function flushBuffer() {
     const messageSelectors = [
-      'message-content',                    // Gemini message component
-      '.response-container',                // AI response blocks
-      '.user-query',                        // User query blocks
-      '.conversation-container .message',   // Generic fallback
-      'model-response',                     // Model response element
-      'user-query',                         // User query element
+      'message-content',                    
+      '.response-container',                
+      '.user-query',                        
+      '.conversation-container .message',   
+      'model-response',                     
+      'user-query',                         
     ];
 
     let messages = [];
@@ -63,10 +83,12 @@
       }
     }
 
-    const newMessages = messages.slice(lastCapturedIndex);
+    if (messages.length <= lastCapturedIndex) return;
 
-    for (const msg of newMessages) {
-      // Try to determine role from element tag or class
+    const newElements = messages.slice(lastCapturedIndex);
+    const historyElements = messages.slice(Math.max(0, lastCapturedIndex - HISTORY_WINDOW), lastCapturedIndex);
+
+    const processElement = (msg) => {
       const tagName = msg.tagName?.toLowerCase() || '';
       const className = msg.className?.toLowerCase() || '';
       let role = 'unknown';
@@ -77,34 +99,31 @@
       }
 
       const text = msg.innerText?.trim();
+      
+      if (!text) return null;
 
-      if (text && text.length >= MIN_CONTENT_LENGTH) {
-        const filtered = window.__continuumFilterPII
-          ? window.__continuumFilterPII(text, state.privacyRules?.blocked_keywords || [])
-          : text;
+      const filtered = window.__continuumFilterPII
+        ? window.__continuumFilterPII(text, state.privacyRules?.blocked_keywords || [])
+        : text;
 
-        messageBuffer.push({
-          role: role,
-          content: filtered,
-          timestamp: new Date().toISOString(),
-        });
-      }
+      return `[${role}]: ${filtered}`;
+    };
+
+    const newTexts = newElements.map(processElement).filter(t => t && t.length >= MIN_CONTENT_LENGTH);
+    const historyTexts = historyElements.map(processElement).filter(t => t);
+
+    if (newTexts.length === 0) {
+      lastCapturedIndex = messages.length;
+      return;
     }
 
-    lastCapturedIndex = messages.length;
-  }
-
-  function startBatchTimer() {
-    batchTimer = setInterval(flushBuffer, BATCH_INTERVAL_MS);
-    window.addEventListener('beforeunload', flushBuffer);
-  }
-
-  function flushBuffer() {
-    if (messageBuffer.length === 0) return;
-
-    const content = messageBuffer
-      .map(m => `[${m.role}]: ${m.content}`)
-      .join('\n\n---\n\n');
+    let finalContent = '';
+    
+    if (historyTexts.length > 0) {
+      finalContent += `[Context History]\n${historyTexts.join('\n\n')}\n\n---\n\n`;
+    }
+    
+    finalContent += `[New Conversation]\n${newTexts.join('\n\n')}`;
 
     chrome.runtime.sendMessage({
       type: 'CAPTURE_CONTENT',
@@ -113,12 +132,12 @@
         source_name: SOURCE_NAME,
         url: window.location.href,
         title: document.title,
-        content: content,
+        content: finalContent,
       },
     });
 
-    console.log(`[Continuum] Sent ${messageBuffer.length} messages from Gemini`);
-    messageBuffer = [];
+    console.log(`[Continuum] Flushed ${newTexts.length} new messages (+${historyTexts.length} history)`);
+    lastCapturedIndex = messages.length;
   }
 
   if (document.readyState === 'complete') {
