@@ -57,6 +57,16 @@
     },
     {
       "matches": [
+        "https://claude.ai/*"
+      ],
+      "js": [
+        "utils/privacy-filter.js",
+        "content-scripts/claude.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
         "https://chatgpt.com/*",
         "https://gemini.google.com/*",
         "https://claude.ai/*"
