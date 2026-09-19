@@ -173,7 +173,7 @@ Send captured context to the backend for processing.
 // Request
 {
   "project_id": "proj_abc123",
-  "source_type": "llm_chat",           // "llm_chat" | "webpage" | "mcp_note"
+  "source_type": "llm_chat",           // "llm_chat" | "webpage"
   "source_name": "ChatGPT",            // "ChatGPT" | "Claude" | "Gemini" | domain name
   "url": "https://chatgpt.com/c/abc",
   "content": "User asked about Samsung S25 specs... AI responded with...",

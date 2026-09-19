@@ -200,7 +200,6 @@ dashboard/
   6. Open a review website → extension captures
   7. Check dashboard → context entries appear
   8. Open Gemini → primer auto-injected
-  9. (If MCP works) Open Claude → search_context returns captured data
   ```
 - [ ] Record demo video (≤3 min):
   | Time | Content |
@@ -209,7 +208,7 @@ dashboard/
   | 0:15–0:30 | Continuum intro |
   | 0:30–1:30 | Live demo: create project, capture, switch LLM with context |
   | 1:30–2:00 | AWS beat: CloudWatch/Bedrock/DynamoDB console on screen |
-  | 2:00–2:30 | MCP demo (if ready) or dashboard tour |
+  | 2:00–2:30 | Dashboard tour |
   | 2:30–3:00 | Architecture + team |
 - [ ] Write submission writeup
 - [ ] Update `AI_TOOLS_USED.md` — collect from all team members

@@ -112,6 +112,17 @@ async function handleMessage(message, sender) {
       return await getPrimer();
     }
 
+    case 'SEARCH_CONTEXT': {
+      if (!activeProject) return { results: [] };
+      try {
+        const data = await ContinuumAPI.searchContext(activeProject.project_id, message.query, 3);
+        return { results: data.results || [] };
+      } catch (err) {
+        console.error('[Continuum] Search failed:', err);
+        return { results: [] };
+      }
+    }
+
     // ── From popup ──
     case 'SET_ACTIVE_PROJECT': {
       activeProject = message.project;

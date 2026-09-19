@@ -14,34 +14,45 @@
     "https://*/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
-    "default_popup": "popup/popup.html",
-    "default_icon": {
-      "16": "icons/icon-16.png",
-      "48": "icons/icon-48.png",
-      "128": "icons/icon-128.png"
-    }
+    "default_popup": "popup/popup.html"
   },
   "content_scripts": [
     {
-      "matches": ["https://chatgpt.com/*"],
-      "js": ["utils/privacy-filter.js", "content-scripts/chatgpt.js"],
+      "matches": [
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "utils/privacy-filter.js",
+        "content-scripts/chatgpt.js"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://gemini.google.com/*"],
-      "js": ["utils/privacy-filter.js", "content-scripts/gemini.js"],
+      "matches": [
+        "https://gemini.google.com/*"
+      ],
+      "js": [
+        "utils/privacy-filter.js",
+        "content-scripts/gemini.js"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://*/*"],
+      "matches": [
+        "https://*/*"
+      ],
       "exclude_matches": [
         "https://chatgpt.com/*",
         "https://gemini.google.com/*"
       ],
-      "js": ["utils/privacy-filter.js", "content-scripts/generic.js"],
+      "js": [
+        "utils/privacy-filter.js",
+        "content-scripts/generic.js"
+      ],
       "run_at": "document_idle"
     },
     {
@@ -50,7 +61,10 @@
         "https://gemini.google.com/*",
         "https://claude.ai/*"
       ],
-      "js": ["content-scripts/injector.js"],
+      "js": [
+        "content-scripts/injector.js",
+        "content-scripts/interceptor.js"
+      ],
       "run_at": "document_idle"
     }
   ],
@@ -62,10 +76,5 @@
       },
       "description": "Open Continuum project switcher"
     }
-  },
-  "icons": {
-    "16": "icons/icon-16.png",
-    "48": "icons/icon-48.png",
-    "128": "icons/icon-128.png"
   }
 }

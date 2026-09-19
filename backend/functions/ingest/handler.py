@@ -5,7 +5,7 @@ Pipeline:
 2. Bedrock summarization (Claude Haiku)
 3. Bedrock embedding (Titan)
 4. Store raw content in S3
-5. Store metadata in DynamoDB
+5. Store metadata + embedding vector in DynamoDB
 """
 import json
 import logging
@@ -82,7 +82,7 @@ def handler(event, context):
             ContentType='text/plain',
         )
 
-        # 5. Store metadata in DynamoDB
+        # 5. Store metadata + embedding in DynamoDB
         logger.info(json.dumps({'action': 'step_5_dynamodb_store', 'entry_id': entry_id}))
         table = dynamodb.Table(ENTRIES_TABLE)
         entry = {
@@ -95,13 +95,10 @@ def handler(event, context):
             'title': body.get('title', ''),
             'summary_text': summary_text,
             's3_raw_ref': s3_key,
-            'embedding_id': entry_id,  # Same as entry_id for now
+            'embedding': [float(x) for x in embedding],  # Titan 1024-dim vector for cosine similarity search
             'captured_at': body.get('captured_at', datetime.utcnow().isoformat()),
         }
         table.put_item(Item=entry)
-
-        # TODO: Step 6 — Store embedding vector in OpenSearch Serverless
-        # This will be implemented when OpenSearch collection is provisioned
 
         logger.info(json.dumps({
             'action': 'ingest_complete',
