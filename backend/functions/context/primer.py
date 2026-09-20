@@ -1,4 +1,4 @@
-"""GET /context/primer — Compose a short context primer for LLM injection."""
+"""GET /context/primer - Compose a short context primer for LLM injection."""
 import json
 import logging
 import os
@@ -50,20 +50,21 @@ def handler(event, context):
 
 
 def compose_primer(project, entries, facts):
+    """Build a clean, concise primer for LLM injection."""
     lines = []
-    
+
     if facts:
-        lines.append(f"User Facts: {', '.join([f['value'] for f in facts])}")
-        
+        fact_values = ', '.join(f['value'] for f in facts)
+        lines.append('User Facts: ' + fact_values)
+
     if entries:
         lines.append('Recent context:')
         for entry in entries[:5]:
             source = entry.get('source_name', 'Unknown')
             summary = entry.get('summary_text', '')
-            lines.append(f"- [{source}] {summary}")
+            lines.append('- [' + source + '] ' + summary)
 
-    return '
-'.join(lines)
+    return '\n'.join(lines)
 
 
 def format_profile(facts):
