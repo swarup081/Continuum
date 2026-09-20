@@ -74,7 +74,7 @@ async function loadProjects() {
     updateUI();
     setStatus('Ready');
   } catch (err) {
-    console.error('[Continuum] Failed to load projects:', err);
+    console.warn('[Continuum] Failed to load projects (handled gracefully):', err);
     if (err.message && err.message.includes('401')) {
       setStatus('Please log in via dashboard');
     } else {
