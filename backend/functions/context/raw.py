@@ -1,4 +1,4 @@
-﻿"""GET /context/entries/{entry_id}/raw - Fetch full raw text from S3."""
+"""GET /context/entries/{entry_id}/raw - Fetch full raw text from S3."""
 import json
 import logging
 import os

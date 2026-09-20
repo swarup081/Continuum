@@ -1,4 +1,4 @@
-﻿"""Bedrock client - summarize and embed via Amazon Bedrock."""
+"""Bedrock client - summarize and embed via Amazon Bedrock."""
 import json
 import logging
 import boto3
@@ -19,22 +19,25 @@ def summarize(text, model_id='amazon.nova-lite-v1:0'):
         'input_length': len(truncated),
     }))
 
+    prompt = (
+        'Summarize this captured context in 2-3 concise sentences. '
+        'Focus on key facts, decisions, findings, and action items. '
+        'Do not include any preamble like "Here is a summary".\n\n'
+        + truncated
+    )
+
     try:
         response = bedrock.converse(
             modelId=model_id,
             messages=[{
                 'role': 'user',
-                'content': [{
-                    'text': 'Summarize this captured context in 2-3 concise sentences. Focus on key facts, decisions, findings, and action items. Do not include any preamble like "Here is a summary".
-
-' + truncated
-                }]
+                'content': [{'text': prompt}]
             }],
             inferenceConfig={
                 'maxTokens': 300
             }
         )
-        
+
         summary = response['output']['message']['content'][0]['text']
 
         logger.info(json.dumps({

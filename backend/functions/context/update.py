@@ -1,4 +1,4 @@
-﻿"""PUT /context/entries/{entry_id} - Update full raw text and summarize."""
+"""PUT /context/entries/{entry_id} - Update full raw text and summarize."""
 import json
 import logging
 import os
