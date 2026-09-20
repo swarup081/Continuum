@@ -1,4 +1,4 @@
-﻿// Continuum - Generic Webpage Content Script
+// Continuum - Generic Webpage Content Script
 // Extracts main content from any webpage (non-LLM sites)
 
 (function () {
@@ -49,18 +49,18 @@
       'position: fixed',
       'bottom: 20px',
       'right: 20px',
-      'background: #6c63ff',
+      'background: #2563eb',
       'color: white',
       'border: none',
-      'border-radius: 24px',
+      'border-radius: 6px',
       'padding: 10px 18px',
-      'font-size: 13px',
-      'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      'font-size: 14px',
+      'font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       'font-weight: 500',
       'cursor: pointer',
       'z-index: 999999',
-      'box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4)',
-      'transition: all 0.2s ease',
+      'box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
+      'transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       'display: flex',
       'align-items: center',
       'gap: 8px',
@@ -68,33 +68,35 @@
 
     btn.addEventListener('mouseenter', () => {
       btn.style.transform = 'translateY(-2px)';
-      btn.style.boxShadow = '0 6px 16px rgba(108, 99, 255, 0.5)';
+      btn.style.background = '#1d4ed8';
+      btn.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)';
     });
     btn.addEventListener('mouseleave', () => {
       btn.style.transform = 'translateY(0)';
-      btn.style.boxShadow = '0 4px 12px rgba(108, 99, 255, 0.4)';
+      btn.style.background = '#2563eb';
+      btn.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)';
     });
 
     btn.addEventListener('click', async () => {
       btn.textContent = 'Saving...';
-      btn.style.background = '#4a42d9';
+      btn.style.background = '#1d4ed8';
       btn.disabled = true;
 
       const success = await capturePageContent();
 
       if (success) {
         btn.textContent = '✓ Saved to ' + state.activeProject.name;
-        btn.style.background = '#10b981';
+        btn.style.background = '#16a34a';
         setTimeout(() => {
           btn.style.opacity = '0';
           setTimeout(() => btn.remove(), 500);
         }, 2500);
       } else {
         btn.textContent = 'Too short to save';
-        btn.style.background = '#ef4444';
+        btn.style.background = '#dc2626';
         setTimeout(() => {
           btn.textContent = 'Save to ' + state.activeProject.name;
-          btn.style.background = '#6c63ff';
+          btn.style.background = '#2563eb';
           btn.disabled = false;
         }, 2500);
       }
