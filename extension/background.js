@@ -1,14 +1,14 @@
-// Continuum — Background Service Worker
+﻿// Continuum - Background Service Worker
 // Handles message routing, API calls, badge state, and tab management
 
 import { ContinuumAPI } from './utils/api-client.js';
 
-// ─── State ──────────────────────────────────────────────────────────
+// State
 let activeProject = null;
 let captureEnabled = true;
 let privacyRules = { blocked_domains: [], blocked_keywords: [] };
 
-// ─── Initialize ─────────────────────────────────────────────────────
+// Initialize
 chrome.runtime.onInstalled.addListener(async () => {
   console.log('[Continuum] Extension installed');
   await loadState();
@@ -20,7 +20,7 @@ chrome.runtime.onStartup.addListener(async () => {
   updateBadge();
 });
 
-// ─── Load stored state ──────────────────────────────────────────────
+// Load stored state
 async function loadState() {
   const data = await chrome.storage.local.get([
     'activeProject',
@@ -33,7 +33,7 @@ async function loadState() {
   privacyRules = data.privacyRules || { blocked_domains: [], blocked_keywords: [] };
 }
 
-// ─── Badge management ───────────────────────────────────────────────
+// Badge management
 function updateBadge(tabUrl = null) {
   if (!activeProject) {
     chrome.action.setBadgeText({ text: '' });
@@ -41,19 +41,19 @@ function updateBadge(tabUrl = null) {
   }
 
   if (!captureEnabled) {
-    chrome.action.setBadgeText({ text: '⏸' });
-    chrome.action.setBadgeBackgroundColor({ color: '#888888' });
+    chrome.action.setBadgeText({ text: 'OFF' });
+    chrome.action.setBadgeBackgroundColor({ color: '#6b7280' });
     return;
   }
 
   if (tabUrl && isBlockedDomain(tabUrl)) {
-    chrome.action.setBadgeText({ text: '🚫' });
-    chrome.action.setBadgeBackgroundColor({ color: '#f44336' });
+    chrome.action.setBadgeText({ text: '!' });
+    chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
     return;
   }
 
-  chrome.action.setBadgeText({ text: '●' });
-  chrome.action.setBadgeBackgroundColor({ color: '#4caf50' });
+  chrome.action.setBadgeText({ text: 'ON' });
+  chrome.action.setBadgeBackgroundColor({ color: '#10b981' });
 }
 
 function isBlockedDomain(url) {
@@ -67,10 +67,14 @@ function isBlockedDomain(url) {
   }
 }
 
-// ─── Tab change → update badge ──────────────────────────────────────
+// Tab change -> update badge
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  const tab = await chrome.tabs.get(activeInfo.tabId);
-  updateBadge(tab.url);
+  try {
+    const tab = await chrome.tabs.get(activeInfo.tabId);
+    if (tab && tab.url) {
+      updateBadge(tab.url);
+    }
+  } catch (e) {}
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -79,7 +83,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-// ─── Message handler (from content scripts and popup) ───────────────
+// Message handler (from content scripts and popup)
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   handleMessage(message, sender).then(sendResponse);
   return true; // Keep channel open for async response
@@ -88,7 +92,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function handleMessage(message, sender) {
   await loadState();
   switch (message.type) {
-    // ── From content scripts ──
+    // From content scripts
     case 'CAPTURE_CONTENT': {
       if (!activeProject || !captureEnabled) {
         return { success: false, reason: 'No active project or capture disabled' };
@@ -124,7 +128,7 @@ async function handleMessage(message, sender) {
       }
     }
 
-    // ── From popup ──
+    // From popup
     case 'SET_ACTIVE_PROJECT': {
       activeProject = message.project;
       await chrome.storage.local.set({ activeProject: message.project });
@@ -159,7 +163,7 @@ async function handleMessage(message, sender) {
   }
 }
 
-// ─── API calls ──────────────────────────────────────────────────────
+// API calls
 async function ingestContent(payload) {
   try {
     const result = await ContinuumAPI.ingest({
@@ -171,7 +175,7 @@ async function ingestContent(payload) {
       title: payload.title,
       captured_at: new Date().toISOString()
     });
-    console.log('[Continuum] Ingested:', result.entry_id);
+    console.log('[Continuum] Ingested successfully:', result.entry_id);
     return { success: true, entry_id: result.entry_id };
   } catch (err) {
     console.error('[Continuum] Ingest failed:', err);
@@ -215,4 +219,3 @@ async function restoreTabs(projectId) {
     return { success: false, error: err.message };
   }
 }
-

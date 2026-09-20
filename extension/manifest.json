@@ -1,8 +1,8 @@
-{
+﻿{
   "manifest_version": 3,
   "name": "Continuum",
   "version": "0.1.0",
-  "description": "Cross-LLM, cross-site context memory — never re-explain yourself to an AI again",
+  "description": "Cross-LLM, cross-site context memory - never re-explain yourself to an AI again",
   "permissions": [
     "storage",
     "activeTab",
@@ -73,8 +73,7 @@
         "https://claude.ai/*"
       ],
       "js": [
-        "content-scripts/injector.js",
-        "content-scripts/interceptor.js"
+        "content-scripts/injector.js"
       ],
       "run_at": "document_idle"
     }

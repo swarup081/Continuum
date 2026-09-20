@@ -1,5 +1,5 @@
 ﻿// Continuum - ChatGPT Content Script
-// Captures conversation content using stable-text polling
+// Captures conversation content continuously using polling and DOM observer
 
 (function () {
   'use strict';
@@ -11,16 +11,37 @@
   let lastSeenText = '';
   let stableCount = 0;
   let captureInterval = null;
+  let observer = null;
 
   async function init() {
-    state = await chrome.runtime.sendMessage({ type: 'GET_STATE' });
-    if (!state.activeProject || !state.captureEnabled || state.isBlocked) return;
+    try {
+      state = await chrome.runtime.sendMessage({ type: 'GET_STATE' });
+    } catch (e) {
+      return;
+    }
+
+    if (!state || !state.activeProject || !state.captureEnabled || state.isBlocked) return;
+
     captureInterval = setInterval(pollAndCapture, 2000);
+    setupObserver();
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') forceCapture();
+    });
     window.addEventListener('beforeunload', forceCapture);
   }
 
+  function setupObserver() {
+    try {
+      observer = new MutationObserver(() => {
+        pollAndCapture();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    } catch (e) {}
+  }
+
   function extractText() {
-    const elements = document.querySelectorAll('[data-message-author-role]');
+    const elements = document.querySelectorAll('[data-message-author-role], article');
     if (elements.length === 0) return '';
 
     const parts = [];
@@ -28,22 +49,23 @@
       let text = el.innerText;
       if (!text) continue;
       text = text.trim();
-      if (!text) continue;
+      if (!text || text.length < 2) continue;
 
-      const roleAttr = el.getAttribute('data-message-author-role');
-      const role = roleAttr === 'user' ? 'user' : 'assistant';
+      const roleAttr = el.getAttribute('data-message-author-role') || '';
+      const isUser = roleAttr === 'user' || el.querySelector('[data-message-author-role="user"]');
+      const role = isUser ? 'user' : 'assistant';
 
       const filtered = window.__continuumFilterPII
         ? window.__continuumFilterPII(text, state.privacyRules?.blocked_keywords || [])
         : text;
-      parts.push('[' + role + ']: ' + filtered);
+      parts.push(`[${role}]: ${filtered}`);
     }
     return parts.slice(-10).join('\n\n');
   }
 
   function pollAndCapture() {
     const currentText = extractText();
-    if (!currentText || currentText.length < 50) return;
+    if (!currentText || currentText.length < 30) return;
 
     if (currentText === lastSeenText) {
       stableCount++;
@@ -59,12 +81,14 @@
 
   function forceCapture() {
     const currentText = extractText();
-    if (currentText && currentText.length >= 50 && currentText !== lastCapturedText) {
+    if (currentText && currentText.length >= 30 && currentText !== lastCapturedText) {
       doCapture(currentText);
+      lastCapturedText = currentText;
     }
   }
 
   function doCapture(text) {
+    if (!state || !state.activeProject || !state.captureEnabled) return;
     chrome.runtime.sendMessage({
       type: 'CAPTURE_CONTENT',
       payload: {
