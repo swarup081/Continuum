@@ -1,8 +1,10 @@
-﻿const SOURCE_ICONS = {
-  'ChatGPT': '🤖',
-  'Gemini': '✨',
-  'Claude': '🧠',
-  'web_page': '🌐',
+import { Bot, Sparkles, BrainCircuit, Globe, FileText, Link, Edit2 } from 'lucide-react';
+
+const SOURCE_ICONS = {
+  'ChatGPT': <Bot size={16} />,
+  'Gemini': <Sparkles size={16} />,
+  'Claude': <BrainCircuit size={16} />,
+  'web_page': <Globe size={16} />,
 };
 
 export default function ContextEntry({ entry, showScore = false, onEdit }) {
@@ -13,7 +15,7 @@ export default function ContextEntry({ entry, showScore = false, onEdit }) {
     });
   }
 
-  const icon = SOURCE_ICONS[entry.source_name] || SOURCE_ICONS[entry.source_type] || '📄';
+  const icon = SOURCE_ICONS[entry.source_name] || SOURCE_ICONS[entry.source_type] || <FileText size={16} />;
 
   return (
     <div className="context-entry">
@@ -32,10 +34,9 @@ export default function ContextEntry({ entry, showScore = false, onEdit }) {
           {onEdit && (
             <button 
               onClick={() => onEdit(entry.entry_id)}
-              className="btn btn-ghost btn-sm"
-              style={{ padding: '4px 8px', fontSize: '12px', border: '1px solid #3d3d5c' }}
+              className="btn btn-outline btn-sm"
             >
-              Edit
+              <Edit2 size={12} /> Edit
             </button>
           )}
         </div>
@@ -48,6 +49,7 @@ export default function ContextEntry({ entry, showScore = false, onEdit }) {
           rel="noopener noreferrer"
           className="context-entry-url"
         >
+          <Link size={14} />
           {entry.url.length > 60 ? entry.url.slice(0, 60) + '...' : entry.url}
         </a>
       )}

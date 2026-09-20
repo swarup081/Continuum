@@ -1,4 +1,4 @@
-﻿// Continuum - Background Service Worker
+// Continuum - Background Service Worker
 // Handles message routing, API calls, badge state, and tab management
 
 import { ContinuumAPI } from './utils/api-client.js';
@@ -156,6 +156,12 @@ async function handleMessage(message, sender) {
 
     case 'RESTORE_TABS': {
       return await restoreTabs(message.projectId);
+    }
+
+    case 'SYNC_TOKEN': {
+      await chrome.storage.local.set({ authToken: message.token });
+      console.log('[Continuum] Saved synced auth token');
+      return { success: true };
     }
 
     default:

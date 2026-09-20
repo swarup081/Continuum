@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../components/Toast';
+import { Info, X } from 'lucide-react';
 
 export default function Profile() {
   const addToast = useToast();
@@ -75,7 +76,7 @@ export default function Profile() {
       </div>
 
       <div className="info-banner">
-        <span className="info-icon">ℹ️</span>
+        <span className="info-icon"><Info size={20} /></span>
         <p>This profile is shared with LLMs to give them context about you. Add facts like your name, profession, and interests.</p>
       </div>
 
@@ -97,7 +98,7 @@ export default function Profile() {
               className="fact-value"
             />
             <button className="btn btn-ghost btn-sm btn-icon" onClick={() => removeFact(index)}>
-              ✕
+              <X size={14} />
             </button>
           </div>
         ))}

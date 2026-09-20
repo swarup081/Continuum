@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { getUser, logout } from '../services/auth';
+import { Hexagon, LogOut } from 'lucide-react';
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <span className="navbar-logo">◉</span>
+        <span className="navbar-logo"><Hexagon size={24} strokeWidth={2.5} /></span>
         <span className="navbar-title">Continuum</span>
       </div>
       <div className="navbar-right">
@@ -21,7 +22,7 @@ export default function Navbar() {
           <span className="navbar-user">{user.email || user.name || 'User'}</span>
         )}
         <button className="btn btn-ghost btn-sm" onClick={handleLogout}>
-          Logout
+          <LogOut size={16} /> Logout
         </button>
       </div>
     </nav>

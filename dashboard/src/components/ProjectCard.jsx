@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { FileText, Calendar, Archive, Trash2, RotateCcw } from 'lucide-react';
 
 export default function ProjectCard({ project, onArchive, onRestore, onDelete }) {
   const navigate = useNavigate();
@@ -22,21 +23,21 @@ export default function ProjectCard({ project, onArchive, onRestore, onDelete })
         <p className="project-card-desc">{project.description}</p>
       )}
       <div className="project-card-meta">
-        <span className="meta-item">📄 {project.context_count || 0} entries</span>
-        <span className="meta-item">📅 {formatDate(project.created_at)}</span>
+        <span className="meta-item"><FileText size={14} /> {project.context_count || 0} entries</span>
+        <span className="meta-item"><Calendar size={14} /> {formatDate(project.created_at)}</span>
       </div>
       <div className="project-card-actions" onClick={e => e.stopPropagation()}>
         {isArchived ? (
           <button className="btn btn-sm btn-outline" onClick={() => onRestore(project.project_id)}>
-            Restore
+            <RotateCcw size={14} /> Restore
           </button>
         ) : (
           <button className="btn btn-sm btn-outline" onClick={() => onArchive(project.project_id)}>
-            Archive
+            <Archive size={14} /> Archive
           </button>
         )}
         <button className="btn btn-sm btn-danger" onClick={() => onDelete(project.project_id)}>
-          Delete
+          <Trash2 size={14} /> Delete
         </button>
       </div>
     </div>

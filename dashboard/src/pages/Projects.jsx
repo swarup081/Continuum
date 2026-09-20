@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import ProjectCard from '../components/ProjectCard';
 import { useToast } from '../components/Toast';
+import { Folder } from 'lucide-react';
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
@@ -150,7 +151,7 @@ export default function Projects() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="empty-state">
-          <span className="empty-icon">📁</span>
+          <span className="empty-icon"><Folder size={48} strokeWidth={1} /></span>
           <p>No {filter !== 'all' ? filter : ''} projects yet</p>
           {filter === 'active' && (
             <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
@@ -175,9 +176,13 @@ export default function Projects() {
       {deleteConfirm && (
         <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>Delete Project?</h3>
-            <p>This will permanently delete the project and all its context entries. This cannot be undone.</p>
-            <div className="modal-actions">
+            <div className="modal-header">
+              <h2>Delete Project?</h2>
+            </div>
+            <div className="modal-body">
+              <p>This will permanently delete the project and all its context entries. This cannot be undone.</p>
+            </div>
+            <div className="modal-footer">
               <button className="btn btn-outline" onClick={() => setDeleteConfirm(null)}>Cancel</button>
               <button className="btn btn-danger" onClick={() => handleDelete(deleteConfirm)}>Delete Forever</button>
             </div>

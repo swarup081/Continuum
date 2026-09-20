@@ -4,6 +4,7 @@ import api from '../services/api';
 import ContextEntry from '../components/ContextEntry';
 import EntryEditorModal from '../components/EntryEditorModal';
 import { useToast } from '../components/Toast';
+import { FileText, Search, Inbox, ArrowLeft } from 'lucide-react';
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -65,7 +66,7 @@ export default function ProjectDetail() {
       <div className="page-header">
         <div className="page-header-left">
           <button className="btn btn-ghost btn-sm" onClick={() => navigate('/projects')}>
-            ← Back
+            <ArrowLeft size={16} /> Back
           </button>
           <h1>{projectName || 'Project Details'}</h1>
         </div>
@@ -75,14 +76,16 @@ export default function ProjectDetail() {
         <button
           className={`filter-tab ${tab === 'entries' ? 'active' : ''}`}
           onClick={() => setTab('entries')}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
         >
-          📄 Context Entries
+          <FileText size={16} /> Context Entries
         </button>
         <button
           className={`filter-tab ${tab === 'search' ? 'active' : ''}`}
           onClick={() => setTab('search')}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
         >
-          🔍 Search
+          <Search size={16} /> Search
         </button>
       </div>
 
@@ -95,7 +98,7 @@ export default function ProjectDetail() {
             </div>
           ) : entries.length === 0 ? (
             <div className="empty-state">
-              <span className="empty-icon">📭</span>
+              <span className="empty-icon"><Inbox size={48} strokeWidth={1} /></span>
               <p>No context entries captured yet</p>
               <p className="empty-sub">Start browsing with the Continuum extension active to capture context</p>
             </div>

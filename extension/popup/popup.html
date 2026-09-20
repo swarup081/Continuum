@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -11,45 +11,34 @@
     <!-- Header -->
     <div class="header">
       <div class="logo">
-        <span class="logo-icon">⚡</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="logo-icon"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
         <span class="logo-text">Continuum</span>
       </div>
       <button id="captureToggle" class="toggle-btn" title="Toggle capture">
-        <span id="captureIcon">●</span>
+        <span id="captureIcon" class="status-dot"></span>
       </button>
     </div>
 
-    <!-- Auth Section (shown when not logged in) -->
-    <div id="authSection" class="section" style="display: none;">
-      <div class="auth-form">
-        <input type="email" id="loginEmail" placeholder="Email" class="input">
-        <input type="password" id="loginPassword" placeholder="Password" class="input">
-        <button id="loginBtn" class="btn btn-primary">Login</button>
-        <p class="auth-link">No account? <a href="#" id="showRegister">Register</a></p>
+    <div id="mainContent">
+      <!-- Active Project Banner -->
+      <div id="activeProjectBanner" class="active-project" style="display: none;">
+        <div class="active-label">Active Project</div>
+        <div id="activeProjectName" class="active-name">—</div>
+        <div id="activeProjectCount" class="active-count">0 items captured</div>
       </div>
-    </div>
 
-    <!-- Active Project Banner -->
-    <div id="activeProjectBanner" class="active-project" style="display: none;">
-      <div class="active-label">Active Project</div>
-      <div id="activeProjectName" class="active-name">—</div>
-      <div id="activeProjectCount" class="active-count">0 items captured</div>
-    </div>
-
-    <!-- Create Project -->
-    <div class="section">
-      <div class="create-project">
-        <input type="text" id="newProjectName" placeholder="New project name..." class="input">
-        <button id="createProjectBtn" class="btn btn-primary">Create</button>
+      <!-- Project List -->
+      <div class="section">
+        <div class="section-title">Switch Project</div>
+        <div id="projectList" class="project-list">
+          <div class="loading">Loading projects...</div>
+        </div>
       </div>
-    </div>
 
-    <!-- Project List -->
-    <div class="section">
-      <div class="section-title">Projects</div>
-      <div id="projectList" class="project-list">
-        <div class="loading">Loading projects...</div>
-      </div>
+      <button id="openDashboardBtn" class="btn btn-outline full-width">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        Open Dashboard
+      </button>
     </div>
 
     <!-- Status Bar -->

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../components/Toast';
+import { X } from 'lucide-react';
 
 export default function Privacy() {
   const addToast = useToast();
@@ -122,7 +123,7 @@ export default function Privacy() {
           {domains.map(domain => (
             <span key={domain} className="tag">
               {domain}
-              <button className="tag-remove" onClick={() => removeDomain(domain)}>✕</button>
+              <button className="tag-remove" onClick={() => removeDomain(domain)}><X size={12} /></button>
             </span>
           ))}
         </div>
@@ -146,7 +147,7 @@ export default function Privacy() {
           {keywords.map(keyword => (
             <span key={keyword} className="tag tag-red">
               {keyword}
-              <button className="tag-remove" onClick={() => removeKeyword(keyword)}>✕</button>
+              <button className="tag-remove" onClick={() => removeKeyword(keyword)}><X size={12} /></button>
             </span>
           ))}
         </div>
