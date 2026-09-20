@@ -1,15 +1,20 @@
-// Continuum — Popup Script
-// Project management UI: create, list, switch, archive, restore
+﻿// Continuum - Extension Popup
+// Handles project switching, creation, archiving, and capture toggling
 
 import { ContinuumAPI } from '../utils/api-client.js';
 
-// ─── State ──────────────────────────────────────────────────────────
+// State
+let projects = [];
 let activeProject = null;
 let captureEnabled = true;
-let projects = [];
 
-// ─── DOM Elements ───────────────────────────────────────────────────
+// DOM Elements
 const els = {
+  authSection: document.getElementById('authSection'),
+  loginEmail: document.getElementById('loginEmail'),
+  loginPassword: document.getElementById('loginPassword'),
+  loginBtn: document.getElementById('loginBtn'),
+  showRegister: document.getElementById('showRegister'),
   captureToggle: document.getElementById('captureToggle'),
   captureIcon: document.getElementById('captureIcon'),
   activeProjectBanner: document.getElementById('activeProjectBanner'),
@@ -19,61 +24,72 @@ const els = {
   createProjectBtn: document.getElementById('createProjectBtn'),
   projectList: document.getElementById('projectList'),
   statusText: document.getElementById('statusText'),
-  authSection: document.getElementById('authSection'),
-  loginBtn: document.getElementById('loginBtn'),
-  loginEmail: document.getElementById('loginEmail'),
-  loginPassword: document.getElementById('loginPassword'),
 };
 
-// ─── Initialize ─────────────────────────────────────────────────────
+// Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadState();
-  await loadProjects();
   setupEventListeners();
-  updateUI();
+  await loadStoredState();
+  await loadProjects();
 });
 
-async function loadState() {
-  const data = await chrome.storage.local.get(['activeProject', 'captureEnabled']);
-  activeProject = data.activeProject || null;
-  captureEnabled = data.captureEnabled !== false;
+// Event Listeners
+function setupEventListeners() {
+  els.captureToggle.addEventListener('click', toggleCapture);
+  els.createProjectBtn.addEventListener('click', createProject);
+  els.newProjectName.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') createProject();
+  });
+  els.loginBtn.addEventListener('click', handleLogin);
 }
 
+// Load State from Chrome Storage
+async function loadStoredState() {
+  const data = await chrome.storage.local.get(['activeProject', 'captureEnabled', 'authToken']);
+  activeProject = data.activeProject || null;
+  captureEnabled = data.captureEnabled !== false;
+
+  if (!data.authToken) {
+    els.authSection.style.display = 'block';
+  } else {
+    els.authSection.style.display = 'none';
+  }
+
+  updateUI();
+}
+
+// Load Projects from API
 async function loadProjects() {
   try {
+    setStatus('Loading projects...');
     const data = await ContinuumAPI.getProjects();
     projects = data.projects || [];
+
+    // If active project is set, update its count from fresh data
     if (activeProject) {
-      const updated = projects.find(p => p.project_id === activeProject.project_id);
-      if (updated) {
-        activeProject = updated;
-        chrome.storage.local.set({ activeProject });
-        updateUI();
+      const fresh = projects.find(p => p.project_id === activeProject.project_id);
+      if (fresh) {
+        activeProject.context_count = fresh.context_count;
+        activeProject.name = fresh.name;
+        await chrome.storage.local.set({ activeProject });
       }
     }
+
     renderProjectList();
+    updateUI();
+    setStatus('Ready');
   } catch (err) {
-    console.error('Failed to load projects:', err);
-    els.projectList.innerHTML = '<div class="loading">Failed to load projects</div>'; els.authSection.style.display = 'block';
+    console.error('[Continuum] Failed to load projects:', err);
+    if (err.message.includes('401')) {
+      els.authSection.style.display = 'block';
+      setStatus('Please log in');
+    } else {
+      setStatus('Offline / Backend unreachable');
+    }
   }
 }
 
-// ─── Event Listeners ────────────────────────────────────────────────
-function setupEventListeners() {
-  // Create project
-  els.createProjectBtn.addEventListener('click', createProject);
-  els.newProjectName.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') createProject();
-  });
-
-  // Toggle capture
-  els.captureToggle.addEventListener('click', toggleCapture);
-
-  // Login
-  els.loginBtn?.addEventListener('click', handleLogin);
-}
-
-// ─── Create Project ─────────────────────────────────────────────────
+// Create Project
 async function createProject() {
   const name = els.newProjectName.value.trim();
   if (!name) {
@@ -103,7 +119,7 @@ async function createProject() {
   }
 }
 
-// ─── Switch Project ─────────────────────────────────────────────────
+// Switch Project
 async function switchProject(project) {
   activeProject = {
     project_id: project.project_id,
@@ -121,10 +137,9 @@ async function switchProject(project) {
   setStatus(`Switched to "${project.name}"`);
 }
 
-// ─── Archive/Restore/Delete ─────────────────────────────────────────
+// Archive/Restore/Delete
 async function archiveProject(project) {
   try {
-    // Save current tabs before archiving
     await chrome.runtime.sendMessage({
       type: 'SAVE_TABS',
       projectId: project.project_id,
@@ -133,7 +148,6 @@ async function archiveProject(project) {
     await ContinuumAPI.updateProject(project.project_id, { status: 'archived' });
     project.status = 'archived';
 
-    // If this was the active project, clear it
     if (activeProject?.project_id === project.project_id) {
       activeProject = null;
       await chrome.runtime.sendMessage({ type: 'SET_ACTIVE_PROJECT', project: null });
@@ -158,11 +172,10 @@ async function restoreProject(project) {
     await ContinuumAPI.updateProject(project.project_id, { status: 'active' });
     project.status = 'active';
 
-    // Auto-switch to restored project
     await switchProject(project);
 
     renderProjectList();
-    setStatus(`Restored "${project.name}" — opened ${result.opened || 0} tabs`);
+    setStatus(`Restored "${project.name}"`);
   } catch (err) {
     setStatus('Failed to restore');
     console.error(err);
@@ -192,7 +205,7 @@ async function deleteProject(project) {
   }
 }
 
-// ─── Toggle Capture ─────────────────────────────────────────────────
+// Toggle Capture
 async function toggleCapture() {
   captureEnabled = !captureEnabled;
 
@@ -205,14 +218,13 @@ async function toggleCapture() {
   setStatus(captureEnabled ? 'Capture enabled' : 'Capture paused');
 }
 
-// ─── Render ─────────────────────────────────────────────────────────
+// Render
 function renderProjectList() {
   if (projects.length === 0) {
     els.projectList.innerHTML = '<div class="loading">No projects yet. Create one above!</div>';
     return;
   }
 
-  // Sort: active first, then by created_at desc
   const sorted = [...projects].sort((a, b) => {
     if (a.status === 'active' && b.status !== 'active') return -1;
     if (a.status !== 'active' && b.status === 'active') return 1;
@@ -229,21 +241,20 @@ function renderProjectList() {
           <div class="project-name">${escapeHtml(p.name)}</div>
           <div class="project-meta">
             <span class="status-badge ${p.status}">${p.status}</span>
-            · ${p.context_count || 0} items
+            <span>• ${p.context_count || 0} items</span>
           </div>
         </div>
         <div class="project-actions">
           ${isArchived
-        ? `<button class="btn btn-sm btn-outline" data-action="restore" data-id="${p.project_id}" title="Restore & reopen tabs">↩</button>`
-        : `<button class="btn btn-sm btn-outline" data-action="archive" data-id="${p.project_id}" title="Archive">📦</button>`
+        ? `<button class="btn btn-sm btn-outline" data-action="restore" data-id="${p.project_id}" title="Restore & reopen tabs">Restore</button>`
+        : `<button class="btn btn-sm btn-outline" data-action="archive" data-id="${p.project_id}" title="Archive">Archive</button>`
       }
-          <button class="btn btn-sm btn-danger" data-action="delete" data-id="${p.project_id}" title="Delete permanently">✕</button>
+          <button class="btn btn-sm btn-danger" data-action="delete" data-id="${p.project_id}" title="Delete permanently">×</button>
         </div>
       </div>
     `;
   }).join('');
 
-  // Attach event listeners
   els.projectList.querySelectorAll('[data-action]').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -263,7 +274,6 @@ function renderProjectList() {
 }
 
 function updateUI() {
-  // Active project banner
   if (activeProject) {
     els.activeProjectBanner.style.display = 'block';
     els.activeProjectName.textContent = activeProject.name;
@@ -272,15 +282,14 @@ function updateUI() {
     els.activeProjectBanner.style.display = 'none';
   }
 
-  // Capture toggle
   if (captureEnabled) {
     els.captureToggle.className = 'toggle-btn active';
     els.captureIcon.textContent = '●';
-    els.captureIcon.style.color = '#4caf50';
+    els.captureIcon.style.color = '#10b981';
   } else {
     els.captureToggle.className = 'toggle-btn paused';
     els.captureIcon.textContent = '⏸';
-    els.captureIcon.style.color = '#888';
+    els.captureIcon.style.color = '#6b7280';
   }
 }
 
@@ -306,5 +315,3 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
-
-

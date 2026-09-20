@@ -1,4 +1,4 @@
-// Continuum — Generic Webpage Content Script
+﻿// Continuum - Generic Webpage Content Script
 // Extracts main content from any webpage (non-LLM sites)
 
 (function () {
@@ -6,46 +6,65 @@
 
   const SOURCE_TYPE = 'webpage';
   const MAX_CONTENT_LENGTH = 10000;
-  const MIN_CONTENT_LENGTH = 200; // Don't capture nearly-empty pages
-  const CAPTURE_DELAY_MS = 3000;  // Wait for dynamic content to load
+  const MIN_CONTENT_LENGTH = 150;
+  const BUTTON_ID = 'continuum-manual-save-btn';
 
   let state = null;
 
   async function init() {
-    state = await chrome.runtime.sendMessage({ type: 'GET_STATE' });
-
-    if (!state.activeProject || !state.captureEnabled || state.isBlocked) {
+    try {
+      state = await chrome.runtime.sendMessage({ type: 'GET_STATE' });
+    } catch (e) {
       return;
     }
 
-    // Inject the manual "Save" button
+    if (!state || !state.activeProject || !state.captureEnabled || state.isBlocked) {
+      return;
+    }
+
     injectFloatingButton();
+
+    // Also listen to storage changes
+    chrome.storage.onChanged.addListener(async () => {
+      try {
+        state = await chrome.runtime.sendMessage({ type: 'GET_STATE' });
+        const existing = document.getElementById(BUTTON_ID);
+        if (!state || !state.activeProject || !state.captureEnabled || state.isBlocked) {
+          if (existing) existing.remove();
+        } else if (!existing) {
+          injectFloatingButton();
+        }
+      } catch (e) {}
+    });
   }
 
   function injectFloatingButton() {
+    if (document.getElementById(BUTTON_ID)) return;
+    if (!state || !state.activeProject || !state.captureEnabled) return;
+
     const btn = document.createElement('button');
-    btn.id = 'continuum-manual-save-btn';
-    btn.innerHTML = `📌 Save to ${state.activeProject.name}`;
-    btn.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: #6c63ff;
-      color: white;
-      border: none;
-      border-radius: 24px;
-      padding: 10px 20px;
-      font-size: 14px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-weight: 500;
-      cursor: pointer;
-      z-index: 999999;
-      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    `;
+    btn.id = BUTTON_ID;
+    btn.textContent = 'Save to ' + state.activeProject.name;
+    btn.style.cssText = [
+      'position: fixed',
+      'bottom: 20px',
+      'right: 20px',
+      'background: #6c63ff',
+      'color: white',
+      'border: none',
+      'border-radius: 24px',
+      'padding: 10px 18px',
+      'font-size: 13px',
+      'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      'font-weight: 500',
+      'cursor: pointer',
+      'z-index: 999999',
+      'box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4)',
+      'transition: all 0.2s ease',
+      'display: flex',
+      'align-items: center',
+      'gap: 8px',
+    ].join(';');
 
     btn.addEventListener('mouseenter', () => {
       btn.style.transform = 'translateY(-2px)';
@@ -57,27 +76,27 @@
     });
 
     btn.addEventListener('click', async () => {
-      btn.innerHTML = `⏳ Saving...`;
-      btn.style.background = '#3f3d9e';
+      btn.textContent = 'Saving...';
+      btn.style.background = '#4a42d9';
       btn.disabled = true;
 
       const success = await capturePageContent();
 
       if (success) {
-        btn.innerHTML = `✅ Saved to ${state.activeProject.name}`;
-        btn.style.background = '#4caf50';
+        btn.textContent = '✓ Saved to ' + state.activeProject.name;
+        btn.style.background = '#10b981';
         setTimeout(() => {
           btn.style.opacity = '0';
           setTimeout(() => btn.remove(), 500);
-        }, 3000);
+        }, 2500);
       } else {
-        btn.innerHTML = `❌ Failed to save (too short)`;
-        btn.style.background = '#f44336';
+        btn.textContent = 'Too short to save';
+        btn.style.background = '#ef4444';
         setTimeout(() => {
-          btn.innerHTML = `📌 Save to ${state.activeProject.name}`;
+          btn.textContent = 'Save to ' + state.activeProject.name;
           btn.style.background = '#6c63ff';
           btn.disabled = false;
-        }, 3000);
+        }, 2500);
       }
     });
 
@@ -92,48 +111,44 @@
       return false;
     }
 
-    // Apply privacy filter
     const filtered = window.__continuumFilterPII
       ? window.__continuumFilterPII(content, state.privacyRules?.blocked_keywords || [])
       : content;
 
     const hostname = window.location.hostname;
 
-    chrome.runtime.sendMessage({
-      type: 'CAPTURE_CONTENT',
-      payload: {
-        source_type: SOURCE_TYPE,
-        source_name: hostname,
-        url: window.location.href,
-        title: document.title,
-        content: filtered.substring(0, MAX_CONTENT_LENGTH),
-      },
-    });
-
-    console.log(`[Continuum] Captured webpage: ${hostname} (${filtered.length} chars)`);
-    return true;
+    try {
+      await chrome.runtime.sendMessage({
+        type: 'CAPTURE_CONTENT',
+        payload: {
+          source_type: SOURCE_TYPE,
+          source_name: hostname,
+          url: window.location.href,
+          title: document.title,
+          content: filtered.substring(0, MAX_CONTENT_LENGTH),
+        },
+      });
+      console.log(`[Continuum] Captured webpage: ${hostname} (${filtered.length} chars)`);
+      return true;
+    } catch (err) {
+      console.error('[Continuum] Capture failed:', err);
+      return false;
+    }
   }
 
-  /**
-   * Extract the main readable content from a page.
-   * Uses a priority-based heuristic approach.
-   */
   function extractMainContent() {
-    // Strategy 1: Look for <article> tag
     const article = document.querySelector('article');
     if (article) {
       const text = cleanText(article.innerText);
       if (text.length >= MIN_CONTENT_LENGTH) return text;
     }
 
-    // Strategy 2: Look for <main> tag
     const main = document.querySelector('main');
     if (main) {
       const text = cleanText(main.innerText);
       if (text.length >= MIN_CONTENT_LENGTH) return text;
     }
 
-    // Strategy 3: Look for common content containers
     const contentSelectors = [
       '[role="main"]',
       '.content',
@@ -153,7 +168,6 @@
       }
     }
 
-    // Strategy 4: Find the largest text block (most paragraphs)
     const containers = document.querySelectorAll('div, section');
     let bestContainer = null;
     let bestScore = 0;
@@ -173,25 +187,19 @@
       return cleanText(bestContainer.innerText);
     }
 
-    // Strategy 5: Fall back to body text (truncated)
     return cleanText(document.body.innerText);
   }
 
-  /**
-   * Clean extracted text: remove excess whitespace, nav elements, etc.
-   */
   function cleanText(text) {
     if (!text) return '';
-
     return text
-      .replace(/\n{3,}/g, '\n\n')          // Collapse multiple newlines
-      .replace(/\t+/g, ' ')                 // Replace tabs with spaces
-      .replace(/ {3,}/g, ' ')               // Collapse multiple spaces
-      .replace(/^\s+$/gm, '')               // Remove blank lines
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/\t+/g, ' ')
+      .replace(/ {3,}/g, ' ')
+      .replace(/^\s+$/gm, '')
       .trim();
   }
 
-  // Start
   if (document.readyState === 'complete') {
     init();
   } else {
