@@ -1,4 +1,4 @@
-// Continuum — Claude Content Script
+﻿// Continuum - Claude Content Script
 // Captures conversation content using stable-text polling
 
 (function () {
@@ -22,31 +22,29 @@
   function extractText() {
     const elements = document.querySelectorAll('.font-claude-message, [data-testid*="message"]');
     if (elements.length === 0) return '';
-    
-    let parts = [];
-    for (const el of elements) {
-       let text = el.innerText;
-       if (!text) continue;
-       text = text.trim();
-       if (!text) continue;
-       
-       let role = 'unknown';
-       const attr = el.getAttribute('data-testid') || '';
-       if (attr.includes('user')) role = 'user';
-       else role = 'assistant';
-       
-       const filtered = window.__continuumFilterPII ? window.__continuumFilterPII(text, state.privacyRules?.blocked_keywords || []) : text;
-       parts.push(`[${role}]: ${filtered}`);
-    }
-    return parts.slice(-10).join('
 
-');
+    const parts = [];
+    for (const el of elements) {
+      let text = el.innerText;
+      if (!text) continue;
+      text = text.trim();
+      if (!text) continue;
+
+      const attr = el.getAttribute('data-testid') || '';
+      const role = attr.includes('user') ? 'user' : 'assistant';
+
+      const filtered = window.__continuumFilterPII
+        ? window.__continuumFilterPII(text, state.privacyRules?.blocked_keywords || [])
+        : text;
+      parts.push('[' + role + ']: ' + filtered);
+    }
+    return parts.slice(-10).join('\n\n');
   }
 
   function pollAndCapture() {
     const currentText = extractText();
     if (!currentText || currentText.length < 50) return;
-    
+
     if (currentText === lastSeenText) {
       stableCount++;
       if (stableCount >= 2 && currentText !== lastCapturedText) {
@@ -74,8 +72,7 @@
         source_name: SOURCE_NAME,
         url: window.location.href,
         title: document.title,
-        content: `[New Conversation]
-${text}`,
+        content: '[New Conversation]\n' + text,
       },
     });
   }

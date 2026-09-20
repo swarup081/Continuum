@@ -1,4 +1,4 @@
-// Continuum — ChatGPT Content Script
+﻿// Continuum - ChatGPT Content Script
 // Captures conversation content using stable-text polling
 
 (function () {
@@ -22,30 +22,29 @@
   function extractText() {
     const elements = document.querySelectorAll('[data-message-author-role]');
     if (elements.length === 0) return '';
-    
-    let parts = [];
-    for (const el of elements) {
-       let text = el.innerText;
-       if (!text) continue;
-       text = text.trim();
-       if (!text) continue;
-       
-       let role = 'unknown';
-       const roleAttr = el.getAttribute('data-message-author-role');
-       role = roleAttr === 'user' ? 'user' : 'assistant';
-       
-       const filtered = window.__continuumFilterPII ? window.__continuumFilterPII(text, state.privacyRules?.blocked_keywords || []) : text;
-       parts.push(`[${role}]: ${filtered}`);
-    }
-    return parts.slice(-10).join('
 
-');
+    const parts = [];
+    for (const el of elements) {
+      let text = el.innerText;
+      if (!text) continue;
+      text = text.trim();
+      if (!text) continue;
+
+      const roleAttr = el.getAttribute('data-message-author-role');
+      const role = roleAttr === 'user' ? 'user' : 'assistant';
+
+      const filtered = window.__continuumFilterPII
+        ? window.__continuumFilterPII(text, state.privacyRules?.blocked_keywords || [])
+        : text;
+      parts.push('[' + role + ']: ' + filtered);
+    }
+    return parts.slice(-10).join('\n\n');
   }
 
   function pollAndCapture() {
     const currentText = extractText();
     if (!currentText || currentText.length < 50) return;
-    
+
     if (currentText === lastSeenText) {
       stableCount++;
       if (stableCount >= 2 && currentText !== lastCapturedText) {
@@ -73,8 +72,7 @@
         source_name: SOURCE_NAME,
         url: window.location.href,
         title: document.title,
-        content: `[New Conversation]
-${text}`,
+        content: '[New Conversation]\n' + text,
       },
     });
   }
